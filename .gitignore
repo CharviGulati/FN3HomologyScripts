@@ -1,0 +1,15 @@
+# ignore everything that's a file to be studied
+*.json
+*.csv
+*.log
+
+# housekeeping files 
+venv/
+__pycache__/
+.DS_Store
+
+
+# ignore scripts that were just tests
+RMSD_Script_PyMol.py
+test.py
+temp/
