@@ -11,7 +11,7 @@ import pandas as pd
 # ____________________________Global Variables____________________________________
 BLAST_URL = "https://www.ebi.ac.uk/Tools/services/rest/psiblast"  # https://www.ebi.ac.uk/Tools/services/rest/psiblast/run
 EMAIL = " "  # EBI requires one
-MAX_ITERATIONS = 3
+MAX_ITERATIONS = 10
 FILENAME = "psiblast_1fna.csv"
 
 
@@ -174,7 +174,7 @@ else:
             break
 
         filename = f"psiblast_iteration_{iteration}.json"
-        # result_text = get_results(job_id, "json")
+        result_text = get_results(job_id, "json")
         with open(filename, "w") as file:
             file.write(get_results(job_id, "json"))
 
@@ -182,34 +182,39 @@ else:
             {"iteration": iteration, "job_id": job_id, "filename": filename}
         )
 
-        # now I need to select hits for the next round
+        results = json.loads(result_text)
+        new_hits = []
+
+        for single_hit in results["hits"]:
+            if single_hit.get("hit_iter") == "new":
+                new_hits.append(single_hit)
+
+        print(
+            " ",
+            len(results["hits"]),
+            "hits total. ",
+            len(new_hits),
+            "are the new hits found in this iteration",
+            flush=True,
+        )
+
         selected_entries_for_next_iteration = get_results(job_id, "preselected_ids")
-        # number_hits = len(json.loads(result_text)["hits"])
+
         print(
             " ",
             len(selected_entries_for_next_iteration.split()),
             "hits selected for next round",
+            flush=True,
         )
 
-        current_selected_ids = set(selected_entries_for_next_iteration.split())
-
-        if selected_entries_for_previous_iteration is None:
-            same_as_last_round = False
-        else:
-            same_as_last_round = current_selected_ids == set(
-                selected_entries_for_previous_iteration.split()
-            )
-
-        if same_as_last_round:
+        if iteration > 0 and len(new_hits) == 0:
             print(
-                "No new hits were found in thie new iteration so process stopped, Iteration number: ",
+                "No new hits found in this iteration. Process stopping. Iteration = ",
                 iteration,
             )
             break
 
-        selected_entries_for_previous_iteration = selected_entries_for_next_iteration
         previous_job_id = job_id
-
         time.sleep(10)
 
     pd.DataFrame(job_record).to_csv(FILENAME, index=False)
@@ -281,7 +286,7 @@ for job in job_record:
 hits = pd.DataFrame(all_rows)
 # hits.to_csv("psiblast_all_iterations.csv", index=False)
 
-final_round = hits["iterations"].max()
+final_round = hits["iteration"].max()
 final_hits = hits[hits["iteration"] == final_round]
 
 combining_hits = hits.sort_values("e-value").drop_duplicates(["pdb", "chain"])
