@@ -12,6 +12,8 @@
 # https://search.rcsb.org/#search-api <-- all SEARCH RSCB API documentation
 # https://alignment.rcsb.org/#api-intro <-- all alignment API
 # https://www.rcsb.org/docs/search-and-browse/advanced-search/overview-advanced-search <-- great resource
+# https://data.rcsb.org/data-attributes.html
+# https://data.rcsb.org/index.html#data-api
 
 
 # ---------- Libraries ----------
@@ -33,6 +35,7 @@ RESULTS_URL = "/results"
 MONITOR_ALIGNMENT = (
     "https://alignment.rcsb.org/api/v1/structures/results?uuid={job_ticket}"
 )
+
 
 SEQUENCE_IDENTITY_CUTTOFF = 0.70
 TM_CUTOFF = 0.8
@@ -153,13 +156,13 @@ def run_alignment(pdb_id, chain_id, method_name):
 
 
 # ---------- Part 3: build the table, or load it if already built ----------
-annotated_csv = "psiblast_hits_annotated.csv"
+annotated_csv = "Results/psiblast_final_hits_annotated.csv"
 
 if os.path.exists(annotated_csv):
     dataFrame = pd.read_csv(annotated_csv)
     print("Loaded", len(dataFrame), "annotated hits from pre-saved file")
 else:
-    dataFrame = pd.read_csv("psiblast_final_hits.csv")
+    dataFrame = pd.read_csv("Results/psiblast_final_hits.csv")
     print("Loaded", len(dataFrame), "protein chains from PSI-Blast results")
 
     # Since PSI-Blast does not report the methods I have to individually look each up so I can filter based on that

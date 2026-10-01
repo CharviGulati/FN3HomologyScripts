@@ -9,7 +9,7 @@ import os
 import pandas as pd
 
 # ---------- InterPro Data to a CSV ----------
-with open("structure-matching-PF00041.json") as file:
+with open("Results/structure-matching-PF00041.json") as file:
     interPro_results = json.load(file)
 
 rows = []
@@ -50,7 +50,7 @@ for record in interPro_results:
         )
 interpro = pd.DataFrame(rows)
 interpro = interpro.drop_duplicates(["pdb", "chain"])
-interpro.to_csv("Interpro_FN3_homologs.csv", index=False)
+interpro.to_csv("Interpro_PFam_FN3_homologs.csv", index=False)
 
 print(len(interpro), "unique chains saved")
 print(interpro["method"].value_counts())

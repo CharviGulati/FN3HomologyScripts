@@ -312,3 +312,5 @@ print(
         ["iteration", "pdb", "chain", "pct identity", "e-value"]
     ]
 )
+
+print(hits[hits["pdb"].isin(["2KIU"])])
