@@ -64,99 +64,100 @@ def get_method_and_resolution(pdb_id):
 # ---------- Part 2: ALIGNMENT CALCULATIONS AND HELPERS ----------
 
 
-def alignment_query(pdb_id, chain_id, alignment_method):
-    method = {"name": alignment_method}
+# def alignment_query(pdb_id, chain_id, alignment_method):
+#     method = {"name": alignment_method}
 
-    if alignment_method == "fatcat-flexible":
-        method["parameters"] = {
-            "rmsd_cutoff": 3,
-            "afp_dist_cutoff": 1600,
-            "fragment_length": 8,
-            "max_num_twists": 5,
-        }
+#     if alignment_method == "fatcat-flexible":
+#         method["parameters"] = {
+#             "rmsd_cutoff": 3,
+#             "afp_dist_cutoff": 1600,
+#             "fragment_length": 8,
+#             "max_num_twists": 5,
+#         }
 
-    # Outside the if, so it runs for every method
-    return {
-        "options": {"return_sequence_data": False},
-        "context": {
-            "mode": "pairwise",
-            "method": method,
-            "structures": [
-                {"entry_id": "1FNA", "selection": {"asym_id": "A"}},
-                {"entry_id": pdb_id, "selection": {"asym_id": chain_id}},
-            ],
-        },
-    }
-
-
-def submit(query):
-    data = {"query": json.dumps(query)}
-    response = requests.post(url=(ALIGNMENT_URL + SUBMIT_URL), data=data)
-    response.raise_for_status()
-    return response.text
+#     # Outside the if, so it runs for every method
+#     return {
+#         "options": {"return_sequence_data": False},
+#         "context": {
+#             "mode": "pairwise",
+#             "method": method,
+#             "structures": [
+#                 {"entry_id": "1FNA", "selection": {"asym_id": "A"}},
+#                 {"entry_id": pdb_id, "selection": {"asym_id": chain_id}},
+#             ],
+#         },
+#     }
 
 
-def monitor_job_status_of_submit_query(ticket, max_attempts=50):
-    for attempt in range(max_attempts):
-        response = requests.get(
-            url=(ALIGNMENT_URL + RESULTS_URL), params={"uuid": ticket}
-        )
-
-        if response.status_code == 404:
-            time.sleep(5)
-            continue
-
-        response.raise_for_status()
-        data = response.json()
-        job_status = data["info"]["status"]
-
-        if job_status == "COMPLETE":
-            return data
-
-        if job_status == "ERROR":
-            print("Alignment failed:", data["info"].get("message", data["info"]))
-            return None
-
-        time.sleep(5)
-
-    print("Gave up after", max_attempts, "attempts")
-    return None
+# def submit(query):
+#     data = {"query": json.dumps(query)}
+#     response = requests.post(url=(ALIGNMENT_URL + SUBMIT_URL), data=data)
+#     response.raise_for_status()
+#     return response.text
 
 
-def parse_result(result):
-    alignment = result["results"][0]
-    summary = alignment["summary"]
+# def monitor_job_status_of_submit_query(ticket, max_attempts=50):
+#     for attempt in range(max_attempts):
+#         response = requests.get(
+#             url=(ALIGNMENT_URL + RESULTS_URL), params={"uuid": ticket}
+#         )
 
-    scores = {}
-    for s in summary["scores"]:
-        scores[s["type"]] = s["value"]
+#         if response.status_code == 404:
+#             time.sleep(5)
+#             continue
 
-    return {
-        "tm_score": scores.get("TM-score"),
-        "rmsd": scores.get("RMSD"),
-        "seq_identity": scores.get("sequence-identity"),
-        "similarity_score": scores.get("similarity-score"),
-        "n_aligned": summary.get("n_aln_residue_pairs"),
-        "n_blocks": len(alignment["structure_alignment"]),
-    }
+#         response.raise_for_status()
+#         data = response.json()
+#         job_status = data["info"]["status"]
+
+#         if job_status == "COMPLETE":
+#             return data
+
+#         if job_status == "ERROR":
+#             print("Alignment failed:", data["info"].get("message", data["info"]))
+#             return None
+
+#         time.sleep(5)
+
+#     print("Gave up after", max_attempts, "attempts")
+#     return None
 
 
-def run_alignment(pdb_id, chain_id, method_name):
-    try:
-        ticket = submit(alignment_query(pdb_id, chain_id, method_name))
-        result = monitor_job_status_of_submit_query(ticket)
-    except requests.exceptions.RequestException as e:
-        print(pdb_id, chain_id, method_name, "request failed:", e)
-        return {}
+# def parse_result(result):
+#     alignment = result["results"][0]
+#     summary = alignment["summary"]
 
-    if result is None:
-        return {}
+#     scores = {}
+#     for s in summary["scores"]:
+#         scores[s["type"]] = s["value"]
 
-    return parse_result(result)
+#     return {
+#         "tm_score": scores.get("TM-score"),
+#         "rmsd": scores.get("RMSD"),
+#         "seq_identity": scores.get("sequence-identity"),
+#         "similarity_score": scores.get("similarity-score"),
+#         "n_aligned": summary.get("n_aln_residue_pairs"),
+#         "n_blocks": len(alignment["structure_alignment"]),
+#     }
+
+
+# def run_alignment(pdb_id, chain_id, method_name):
+#     try:
+#         ticket = submit(alignment_query(pdb_id, chain_id, method_name))
+#         result = monitor_job_status_of_submit_query(ticket)
+#     except requests.exceptions.RequestException as e:
+#         print(pdb_id, chain_id, method_name, "request failed:", e)
+#         return {}
+
+#     if result is None:
+#         return {}
+
+#     return parse_result(result)
 
 
 # ---------- Part 3: build the table, or load it if already built ----------
 annotated_csv = "Results/psiblast_final_hits_annotated.csv"
+filtered_annotated_csv = "Results/psiblast_filtered_hits_annotated.csv"
 
 if os.path.exists(annotated_csv):
     dataFrame = pd.read_csv(annotated_csv)
@@ -188,7 +189,7 @@ else:
 
     dataFrame["method"] = method_list
     dataFrame["resolution"] = resolution_list
-    dataFrame.to_csv(annotated_csv, index=False)
+    # dataFrame.to_csv(annotated_csv, index=False)
 
     print("Methods: _________________________________")
     print(dataFrame["method"].value_counts())
@@ -198,7 +199,7 @@ else:
 
 method_nmr = dataFrame["method"].str.contains("NMR", case=False, na=False)
 method_xray_resolution = dataFrame["resolution"]
-good_xray = method_xray_resolution <= 2.0
+good_xray = method_xray_resolution <= 2.55
 final_dataset = dataFrame[method_nmr | good_xray]
 
 print(
@@ -208,12 +209,7 @@ print(
     "protiens left after quality method filtering",
 )
 
-# ---------- Filtering top 100 E-Values for alignment ----------
-
-top_evals = final_dataset.sort_values("e-value").head(100)
-print("Aligning", len(top_evals), "chains")
-print("E-values ranges: ", top_evals["e-value"].min(), "to", top_evals["e-value"].max())
-
+final_dataset.to_csv(filtered_annotated_csv, index=False)
 
 # ---------- Checking for the known proteins ----------
 
@@ -232,6 +228,3 @@ print(
         ["pdb", "chain", "e-value", "method", "resolution"]
     ]
 )
-
-print("--- knowns in the top 100 ---")
-print(top_evals[top_evals["pdb"].isin(knowns)][["pdb", "chain", "e-value"]])

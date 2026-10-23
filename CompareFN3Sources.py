@@ -19,7 +19,7 @@ files = {
 sets = {}
 for name, filename in files.items():
     sets[name] = pdb_set(filename)
-    print(name, ":", len(sets[name]))
+    print("{name}", name, " had :", len(sets[name]))
 
 # Every PDB code seen anywhere.
 # union(*sets.values()) combines all the sets at once.

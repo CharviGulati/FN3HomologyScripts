@@ -13,4 +13,4 @@ __pycache__/
 # ignore scripts that were just tests
 RMSD_Script_PyMol.py
 test.py
-temp/
+ScratchPad.py
